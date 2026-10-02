@@ -100,4 +100,4 @@ Pour vérifier que la détection fonctionne :
    - ou **Today**
 4. Vérifiez que les événements générés par Snort apparaissent bien dans les résultats.
 
-![Visualisation de l'alerte dans Kibana](image.png)
+![Visualisation de l'alerte dans Kibana](Kibana_allert_DDoS.png)
