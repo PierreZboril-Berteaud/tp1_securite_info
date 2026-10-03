@@ -11,7 +11,7 @@ Il faut ce rendre dans les Paramètres du ``serveur > Intégrations > Webhooks``
 
 ![Img de discord, copie de l'url du webhook](URL_Webhook.png)
 
-## 1. Création du script d'alerte (Bash)
+## 2. Création du script d'alerte (Bash)
 
 Le script agit comme un pont entre le collecteur de logs système et l'API de Discord. Il réceptionne le log brut, nettoie les caractères problématiques et le formate dans un objet JSON compatible avec les exigences de Discord.
 
@@ -56,7 +56,7 @@ sudo chmod +x /usr/local/bin/alerte_sec.sh
 
 ---
 
-## 2. Configuration du collecteur Syslog-ng
+## 3. Configuration du collecteur Syslog-ng
 
 Il faut déclarer le script comme une nouvelle destination et créer un filtre pour n'envoyer que les alertes pertinentes à Discord, excluant ainsi le trafic système normal ou les règles Snort par défaut.
 
@@ -92,7 +92,7 @@ filter f_regles_perso {
 
 ---
 
-## 3. Définition du routage et activation
+## 4. Définition du routage et activation
 
 La dernière étape consiste à relier la source de vos logs Snort à la destination du script, en y appliquant le filtre restrictif.
 
