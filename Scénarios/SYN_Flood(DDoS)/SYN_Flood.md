@@ -58,8 +58,6 @@ alert tcp any any -> $HOME_NET 80 (msg:"ALERTE DDoS - SYN Flood detecte"; flags:
 
 - **`sid:1000004`** : identifiant unique de la règle (**Snort ID**). Les règles personnalisées utilisent généralement un SID réservé aux règles locales.
 
-- **`rev:1`** : numéro de révision de la règle. Si la règle est modifiée ultérieurement, ce numéro peut être incrémenté, par exemple à `rev:2`.
-
 ### 2.4 Redémarrer Snort
 
 Enregistrez le fichier (`Ctrl+O`, puis `Entrée`) et quittez l'éditeur (`Ctrl+X`).
