@@ -4,7 +4,7 @@ Ce guide détaille les étapes pour construire une interface de supervision visu
 
 ## 1. Création de la Chronologie des Attaques (Diagramme en Barres)
 
-![Img montrant diagramme en barre chronologique](Chronologie_DiagrammeBarres.png)
+![Img montrant diagramme en barre chronologique](images/Chronologie_DiagrammeBarres.png)
 
 Ce graphique (Timeline) permet de visualiser les pics d'activité et d'identifier rapidement le moment exact d'une attaque.
 
@@ -17,7 +17,7 @@ Ce graphique (Timeline) permet de visualiser les pics d'activité et d'identifie
 
 ## 2. Création de la Répartition des Alertes (Diagramme en Camembert)
 
-![Img montrant diagramme camembert des types d'attaques](Type_PieChart.png)
+![Img montrant diagramme camembert des types d'attaques](images/Type_PieChart.png)
 
 Puisque le champ texte brut `message` ne peut pas être agrégé automatiquement par Kibana (en l'absence de la version `.keyword`), l'utilisation de la fonction **Filters** permet de découper le camembert manuellement en ciblant les identifiants uniques (SID) des alertes Snort.
 
@@ -37,7 +37,7 @@ Puisque le champ texte brut `message` ne peut pas être agrégé automatiquement
      - KQL : `NOT (message: "1000001" OR message: "1000004")`
      - Label : **Autres alertes**
     
-![Img montrant diagramme camembert des types d'attaques configaration des filtres](Type_PieChart_Conf.png)
+![Img montrant diagramme camembert des types d'attaques configaration des filtres](images/Type_PieChart_Conf.png)
 
 5. Cliquez sur le bouton **Close** du menu des filtres, puis sur **Save and return** pour ajouter le camembert finalisé.
 
