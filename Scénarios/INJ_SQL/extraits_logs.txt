@@ -1,0 +1,104 @@
+==========================================================================
+EXTRAITS DE LOGS : SCENARIO INJECTION SQL
+==========================================================================
+Ce fichier contient quelques lignes représentatives, pas l'ensemble des
+logs (583 alertes Snort au total pour la session de test).
+
+Attaquant : 192.168.56.104 (Kali)
+Cible     : 192.168.56.101 (VM Ubuntu, Apache sur le port 80)
+Date      : 5 octobre 2026 (heures en UTC)
+
+
+--------------------------------------------------------------------------
+1. ALERTES SNORT : une par règle
+   Source : /var/log/snort/snort.alert.fast
+--------------------------------------------------------------------------
+
+10/05-22:06:16.879276  [**] [1:1000012:1] SQLI tautologie OR 1=1 detectee [**] [Classification: Web Application Attack] [Priority: 1] {TCP} 192.168.56.104:53680 -> 192.168.56.101:80
+10/05-22:06:16.919489  [**] [1:1000011:1] SQLI UNION SELECT detecte [**] [Classification: Web Application Attack] [Priority: 1] {TCP} 192.168.56.104:53692 -> 192.168.56.101:80
+10/05-22:06:16.973764  [**] [1:1000014:1] SQLI time-based (sleep/benchmark/waitfor) [**] [Classification: Web Application Attack] [Priority: 1] {TCP} 192.168.56.104:53700 -> 192.168.56.101:80
+10/05-22:06:17.015461  [**] [1:1000015:1] SQLI information_schema acces [**] [Classification: Web Application Attack] [Priority: 1] {TCP} 192.168.56.104:53708 -> 192.168.56.101:80
+10/05-22:06:17.056371  [**] [1:1000013:1] SQLI commentaire SQL apres quote [**] [Classification: Web Application Attack] [Priority: 1] {TCP} 192.168.56.104:53720 -> 192.168.56.101:80
+10/05-22:06:17.696156  [**] [1:1000016:1] SQLI outil sqlmap detecte (User-Agent) [**] [Classification: Web Application Attack] [Priority: 1] {TCP} 192.168.56.104:53750 -> 192.168.56.101:80
+
+Lecture d'une ligne :
+  10/05-22:06:16.879276   date et heure de l'alerte (mois/jour-heure)
+  [1:1000012:1]           identifiant de la règle (générateur:SID:révision)
+  SQLI tautologie ...     message de la règle
+  Classification          catégorie : Web Application Attack
+  Priority: 1             niveau de gravité (1 = le plus élevé)
+  {TCP} src:port -> dst:port   IP de l'attaquant vers le serveur web
+
+Note : une même requête peut déclencher plusieurs règles. Par exemple,
+la requête sur information_schema (port 53708) a déclenché les règles
+1000014 et 1000010, car elle contient aussi UNION SELECT.
+
+
+--------------------------------------------------------------------------
+2. REQUETES CORRESPONDANTES DANS LE JOURNAL APACHE
+   Source : /var/log/apache2/access.log
+   (lignes de la première série de tests, vers 21:57 UTC)
+--------------------------------------------------------------------------
+
+192.168.56.104 - - [05/Oct/2026:21:57:06 +0000] "GET /produits.php?id=1'%20OR%201=1--%20 HTTP/1.1" 200 175 "-" "curl/8.20.0"
+192.168.56.104 - - [05/Oct/2026:21:57:28 +0000] "GET /produits.php?id=1%20UNION%20SELECT%20null,null-- HTTP/1.1" 200 184 "-" "curl/8.20.0"
+192.168.56.104 - - [05/Oct/2026:21:58:12 +0000] "GET /produits.php?id=1%20AND%20SLEEP(5)-- HTTP/1.1" 200 174 "-" "curl/8.20.0"
+192.168.56.104 - - [05/Oct/2026:21:58:12 +0000] "GET /produits.php?id=1%20UNION%20SELECT%20table_name%20FROM%20information_schema.tables HTTP/1.1" 200 214 "-" "curl/8.20.0"
+192.168.56.104 - - [05/Oct/2026:21:58:12 +0000] "GET /produits.php?id=admin'--%20 HTTP/1.1" 200 172 "-" "curl/8.20.0"
+192.168.56.104 - - [05/Oct/2026:21:58:15 +0000] "GET /produits.php?id=1 HTTP/1.1" 200 178 "-" "sqlmap/1.10.6#stable (https://sqlmap.org)"
+192.168.56.104 - - [05/Oct/2026:21:58:16 +0000] "GET /produits.php?id=1%29%20AND%209041%3D4222--%20wSEy HTTP/1.1" 200 200 "-" "sqlmap/1.10.6#stable (https://sqlmap.org)"
+
+Lecture d'une ligne :
+  192.168.56.104          IP de l'attaquant
+  [05/Oct/2026:21:57:28]  date et heure de la requête
+  "GET /produits.php?id=..."   requête reçue, avec la charge SQL dans le paramètre id
+  200 184                 code HTTP et taille de la réponse
+  "curl/8.20.0"           User-Agent : outil utilisé (sqlmap se déclare lui-même)
+
+Décodage de l'URL :
+  %20 = espace      %27 = '      %3D = =      %28 = (      %29 = )
+
+Exemple : id=1%20UNION%20SELECT%20null,null--
+  devient : id=1 UNION SELECT null,null--
+
+Remarque : la page répond 200 même pour une attaque. Le serveur ne rejette
+pas la requête, c'est justement pourquoi la détection par Snort est utile.
+
+
+--------------------------------------------------------------------------
+3. LIGNE COLLECTEE PAR SYSLOG-NG
+   Source : /var/log/syslog-ng-central.log
+--------------------------------------------------------------------------
+
+Oct  5 21:57:29 Ubuntu-Server 192.168.56.104 - - [05/Oct/2026:21:57:28 +0000] "GET /produits.php?id=1%20UNION%20SELECT%20null,null-- HTTP/1.1" 200 184 "-" "curl/8.20.0"
+
+syslog-ng ajoute en début de ligne l'heure de collecte (Oct 5 21:57:29) et le
+nom de la machine (Ubuntu-Server), puis recopie le message d'origine.
+
+
+--------------------------------------------------------------------------
+4. COMPTAGES
+--------------------------------------------------------------------------
+
+Alertes SQLI dans snort.alert.fast ............ 583
+Lignes SQLI dans syslog-ng-central.log ........ 586
+Documents Kibana (message : *SQLI*) ........... 588
+
+Pourquoi plus de lignes que d'alertes : le mot SQLI apparait aussi dans les
+commandes sudo tapées pendant les vérifications (par exemple
+sudo grep -c "SQLI" ...). Elles sont tracées dans auth.log, donc collectées
+par syslog-ng et envoyées à Kibana avec program = sudo (3 lignes de plus
+dans syslog-ng-central.log, 5 de plus dans Kibana au moment de la capture).
+Elles se filtrent avec :
+  message : *SQLI* and not program : "sudo"
+
+
+--------------------------------------------------------------------------
+5. REQUETE LEGITIME : AUCUNE ALERTE ATTENDUE
+--------------------------------------------------------------------------
+
+127.0.0.1 - - [05/Oct/2026:21:53:32 +0000] "GET /produits.php?id=1 HTTP/1.1" 200 159 "-" "curl/8.18.0"
+
+Une requête normale apparaît dans le journal Apache, mais ne déclenche
+aucune règle Snort : les règles ne se déclenchent donc pas sur n'importe
+quel trafic.

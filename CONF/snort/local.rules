@@ -29,3 +29,26 @@ alert tcp any any -> $HOME_NET any (msg:"Scan de ports FIN detecte - nmap -sF"; 
 alert tcp any any -> $HOME_NET 22 (msg:"SSH Brute-Force attaque"; threshold: type both, track by_src, count 3, seconds 60; classtype:misc-attack; sid:1000281; rev:2;)
 
 ########################################################################################################################################################
+
+
+###################################################################### INJECTION SQL ###################################################################
+
+# 1 - Tautologie (' OR 1=1)
+alert tcp any any -> $HOME_NET 80 (msg:"SQLI tautologie OR 1=1 detectee"; flow:to_server,established; pcre:"/('|%27)[\s\+]*(or|and)[\s\+]+\d+[\s\+]*=[\s\+]*\d+/Ui"; classtype:web-application-attack; sid:1000011; rev:1;)
+
+# 2 - Commentaire SQL apres une quote (' -- ou ' #)
+alert tcp any any -> $HOME_NET 80 (msg:"SQLI commentaire SQL apres quote"; flow:to_server,established; pcre:"/('|%27)[\s\+]*(--|%2d%2d|#|%23)/Ui"; classtype:web-application-attack; sid:1000012; rev:1;)
+
+# 3 - Time-based blind (sleep, benchmark, waitfor)
+alert tcp any any -> $HOME_NET 80 (msg:"SQLI time-based (sleep/benchmark/waitfor)"; flow:to_server,established; pcre:"/(sleep\s*\(|benchmark\s*\(|waitfor[\s\+]+delay)/Ui"; classtype:web-application-attack; sid:1000013; rev:1;)
+
+# 4 - Reconnaissance du schema
+alert tcp any any -> $HOME_NET 80 (msg:"SQLI information_schema acces"; flow:to_server,established; content:"information_schema"; nocase; http_uri; classtype:web-application-attack; sid:1000014; rev:1;)
+
+# 5 - Outil sqlmap (User-Agent)
+alert tcp any any -> $HOME_NET 80 (msg:"SQLI outil sqlmap detecte (User-Agent)"; flow:to_server,established; content:"sqlmap"; nocase; http_header; classtype:web-application-attack; sid:1000015; rev:1;)
+
+# 6 - UNION SELECT (SID 1000016, car 1000010 est pris par le scan FIN)
+alert tcp any any -> $HOME_NET 80 (msg:"SQLI UNION SELECT detecte"; flow:to_server,established; content:"union"; nocase; http_uri; content:"select"; nocase; http_uri; distance:0; classtype:web-application-attack; sid:1000016; rev:1;)
+
+#########################################################################################################################################################
